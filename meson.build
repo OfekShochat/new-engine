@@ -8,7 +8,8 @@ files = []
 
 files += [
     'src/search/search.cc',
-    'src/neural/nn.cc'
+    'src/neural/nn.cc',
+    'src/uci.cc'
 ]
 
 gdbCompile = ['-std=c++17', '-g']
@@ -25,4 +26,4 @@ test('NN', NNTest)
 
 executable('main', 'src/main.cc', files,
            include_directories : incdir,
-           cpp_args : ['-std=c++17'])
+           cpp_args : normalCompile)

@@ -1,3 +1,5 @@
+#pragma once
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>
@@ -10,7 +12,7 @@
 */
 // O1S - first version, with a sigmoid output
 
-template <int NEURONS, int INPUTS>
+template <int INPUTS, int NEURONS>
 class Layer {
  private:
   alignas(alignment) float weights_[NEURONS * INPUTS];
@@ -30,15 +32,29 @@ class Layer {
   }
 };
 
-template <int L1, int L2>
-class O1S {
+class SAC1 {
  private:
-  static Layer<L1, 64> H1();
-  static Layer<L2, L1> H2();
+  static Layer<4 * 64, 64> SubPawnKing;
+  static Layer<4 * 64, 64> SubQueenRook;
+  static Layer<4 * 64, 64> SubKnightBishop;
+
+  static Layer<64, 32> MainInput;
+  static Layer<32, 1> MainOut;
  public:
-  void load(float* weights1, float* biases1, float* weights2, float* biases2) {
-    H1.load(weights1, biases1);
-    H2.load(weights2, biases2);
+  void load(float* weights1, float* biases1,
+            float* weights2, float* biases2,
+            float* weights3, float* biases3,
+            float* weights4, float* biases4,
+            float* weights5, float* biases5) {
+    SubPawnKing.load(weights1, biases1);
+    SubQueenRook.load(weights1, biases1);
+    SubKnightBishop.load(weights1, biases1);
+    
+    MainInput.load(weights1, biases1);
+    MainOut.load(weights1, biases1);
   }
-  float eval(float* inputs);
+  void eval(float* PawnKing, bool skipPawnKing,
+             float* KnightBishop, bool skipKnightBishop,
+             float* QueenRook, bool skipQueenRook,
+             float out[1]);
 };

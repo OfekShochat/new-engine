@@ -1,8 +1,21 @@
 #include "neural/nn.h"
 
-template <int L1, int L2>
-float O1S<L1, L2>::eval(float* inputs) {
-  float L1out = H1.eval(inputs);
-  float out = H2.eval(L1out);
-  return out;
+void SAC1::eval(float* PawnKing, bool skipPawnKing,
+                 float* KnightBishop, bool skipKnightBishop,
+                 float* QueenRook, bool skipQueenRook,
+                 float out[1]) {
+  float SubKnightBishopOut[64];
+  float SubPawnKingOut[64];
+  float SubQueenRookOut[64];
+  if (!skipPawnKing) SubPawnKing.eval(PawnKing, SubPawnKingOut);
+  if (!skipKnightBishop) SubQueenRook.eval(QueenRook, SubQueenRookOut);
+  if (!skipQueenRook) SubKnightBishop.eval(KnightBishop, SubKnightBishopOut);
+
+  float SubOut[64];
+  for (int i = 0; i < 64; i++)
+    SubOut[i] = SubPawnKingOut[i] + SubQueenRookOut[i] + SubKnightBishopOut[i];
+
+  float MainInputOut[32];
+  MainInput.eval(SubOut, MainInputOut);
+  MainOut.eval(MainInputOut, out);
 }
