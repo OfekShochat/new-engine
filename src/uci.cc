@@ -34,8 +34,17 @@ void UciHandler::loop() {
       case hash("go"):
         go(split(cmd));
         break;
+      case hash("position"):
+        position(split(cmd));
+        break;
       case hash("quit"):
         quit = true;
+        break;
+      case hash("isready"):
+        isready();
+        break;
+      case hash("uci"):
+        printUci();
         break;
       default:
         std::cout << "invalid command" << std::endl;
@@ -75,4 +84,19 @@ void UciHandler::go(std::vector<std::string> cmd) {
   limits.time  = time ==  -1 ? 1000000000 : time;
   libchess::Position b(fen);
   searcher.SearchPos(shared, b, depth == -1 ? 100 : depth, limits);
+}
+
+void UciHandler::position(std::vector<std::string> cmd) {
+  for (int i = 1; i < static_cast<int>(cmd.size()); i += 1) {
+    switch (hash(cmd[i].c_str())) {
+      case hash("fen"):
+        fen = "";
+        i++;
+        while (hash(cmd[i].c_str()) != hash("moves") && i < static_cast<int>(cmd.size())) {
+          fen += cmd[i] + " ";
+          i++;
+        }
+        break;
+    }
+  }
 }
