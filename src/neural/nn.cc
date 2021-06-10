@@ -1,5 +1,11 @@
 #include "neural/nn.h"
 
+Layer<4 * 64, 64> SAC1::SubPawnKing;
+Layer<4 * 64, 64> SAC1::SubQueenRook;
+Layer<4 * 64, 64> SAC1::SubKnightBishop;
+Layer<64, 32> SAC1::MainInput;
+Layer<32, 1> SAC1::MainOut;
+
 void SAC1::eval(float* PawnKing, bool skipPawnKing,
                  float* KnightBishop, bool skipKnightBishop,
                  float* QueenRook, bool skipQueenRook,

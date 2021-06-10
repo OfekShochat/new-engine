@@ -3,15 +3,16 @@
 #include <iostream>
 
 int main() {
-  Layer<16, 1> l;
-  float w[16] = {1.0, 0.4f, 0.2f, 0.1f, 0.6f, 0.7f, 0.2f, 0.52f, 0.154f, 0.53456f, 0.74315f, 0.4f, 0.432f, 0.423f, 0.42f, 0.6f};
-  float b[1] = {1.0};
-  float inputs[16] = { 1.0, 0.4f, 0.2f, 0.1f, 0.6f, 0.7f, 0.2f, 0.52f, 0.154f, 0.53456f, 0.74315f, 0.4f, 0.432f, 0.423f, 0.42f, 0.6f };
-  //float* wptr[10] = w[0];
-  //float* bptr[10] = b[0];
-  l.load(w, b);
-  float o[1];
-  l.eval(inputs, o);
-  std::cout << o[0] << std::endl;
-  return EXPECT<float>(o[0], 5.2941);
+  srand (time(NULL));
+  SAC1 NN;
+  NN.load(*RandArray<256 * 64>(), *RandArray<64>(),
+          *RandArray<256 * 64>(), *RandArray<64>(),
+          *RandArray<256 * 64>(), *RandArray<64>(),
+          *RandArray<64 * 32>(), *RandArray<32>(),
+          *RandArray<32 * 1>(), *RandArray<1>());
+  float out[1];
+  NN.eval(*RandArray<256>(), false, *RandArray<256>(), false, *RandArray<256>(), false, out);
+
+  std::cout << out[0] << std::endl;
+  return 0; //EXPECT<float>(o[0], 5.2941);
 }

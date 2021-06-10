@@ -23,6 +23,9 @@ test('TT', TTTest)
 NNTest = executable('neuralNetworkTest', 'src/tests/NNTest.cc', files,
                     include_directories : incdir, cpp_args : gdbCompile)
 test('NN', NNTest)
+NNTest = executable('LayerTest', 'src/tests/LayerTest.cc', files,
+                    include_directories : incdir, cpp_args : gdbCompile)
+test('Layer', NNTest)
 
 executable('main', 'src/main.cc', files,
            include_directories : incdir,

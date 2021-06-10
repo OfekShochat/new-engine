@@ -1,3 +1,8 @@
+#pragma once
+
+#include <cstdlib>
+#include <ctime>
+
 #define EPSILON 0.0001
 
 bool compare_floats_(float a, float b) {
@@ -5,7 +10,7 @@ bool compare_floats_(float a, float b) {
   return (diff < EPSILON) && (diff > -EPSILON);
 }
 
-template<typename T>
+template <typename T>
 int EXPECT(T what, T expected) {
   switch (sizeof(T)) {
     case (4): // float
@@ -19,4 +24,20 @@ int EXPECT(T what, T expected) {
     default:
       return !(what == expected);
   }
+}
+
+template <int LENGTH>
+float** RandArray() {
+  float** array;
+  array = (float**)malloc(sizeof(float*) * LENGTH + 1);
+  
+  for (int i = 0; i < LENGTH; i++) {
+    array[i] = (float*)malloc(sizeof(float));
+    array[i][0] = 0;
+  }
+
+  for (int i = 0; i < LENGTH; i++)
+    *(array[i]) = static_cast<float>(rand()) / static_cast<float>(RAND_MAX);
+  
+  return array;
 }

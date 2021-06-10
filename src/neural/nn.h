@@ -4,13 +4,6 @@
 #include <cstring>
 #include <iostream>
 #include "neural/simd.h"
-/*
- * O - starter
- * B - board representation
- * the letter at the end indicates the output format
- *  - S: sigmoid
-*/
-// O1S - first version, with a sigmoid output
 
 template <int INPUTS, int NEURONS>
 class Layer {
@@ -47,14 +40,14 @@ class SAC1 {
             float* weights4, float* biases4,
             float* weights5, float* biases5) {
     SubPawnKing.load(weights1, biases1);
-    SubQueenRook.load(weights1, biases1);
-    SubKnightBishop.load(weights1, biases1);
+    SubQueenRook.load(weights2, biases2);
+    SubKnightBishop.load(weights3, biases3);
     
-    MainInput.load(weights1, biases1);
-    MainOut.load(weights1, biases1);
+    MainInput.load(weights4, biases4);
+    MainOut.load(weights5, biases5);
   }
   void eval(float* PawnKing, bool skipPawnKing,
-             float* KnightBishop, bool skipKnightBishop,
-             float* QueenRook, bool skipQueenRook,
-             float out[1]);
+            float* KnightBishop, bool skipKnightBishop,
+            float* QueenRook, bool skipQueenRook,
+            float out[1]);
 };
