@@ -7,16 +7,14 @@
 #include <algorithm>
 
 std::vector<std::string> split(std::string text) {
-  char space_char = ' ';
-  std::vector<std::string> words{};
-
-  std::stringstream sstream(text);
-  std::string word;
-  while (std::getline(sstream, word, space_char)){
-    word.erase(std::remove_if(word.begin(), word.end(), ispunct), word.end());
-    words.push_back(word);
+  std::stringstream ss(text); 
+  std::vector<std::string> out{};
+ 
+  std::string s; 
+  while (std::getline(ss, s, ' ')) { 
+    out.push_back(s); 
   }
-  return words;
+  return out;
 }
 
 uint64_t constexpr mix(char m, uint64_t s) {
