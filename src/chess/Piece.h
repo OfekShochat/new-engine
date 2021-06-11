@@ -14,6 +14,10 @@ class Piece {
         : value_(piece_type.value() | (piece_color.value() << 3)) {
     }
 
+    constexpr int val() const {
+        return value_;
+    }
+
     constexpr PieceType type() const {
         return PieceType{value_ & 7};
     }

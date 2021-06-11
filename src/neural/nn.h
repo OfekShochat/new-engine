@@ -1,9 +1,11 @@
 #pragma once
 
+#include "neural/simd.h"
+#include "chess/Position.h"
+
 #include <cstdint>
 #include <cstring>
 #include <iostream>
-#include "neural/simd.h"
 
 template <int INPUTS, int NEURONS>
 class Layer {
@@ -50,4 +52,58 @@ class SAC1 {
             float* KnightBishop, bool skipKnightBishop,
             float* QueenRook, bool skipQueenRook,
             float out[1]);
+  std::tuple<bool, bool, bool> make(libchess::Position pos,
+                                    float* PawnKing,
+                                    float* KnightBishop,
+                                    float* QueenRook) {
+    for (int i = 0; i < 64; i++) {
+      auto p = pos.piece_on(libchess::Square(i));
+      if (p.has_value()) {
+        switch (p.value().val()) {
+          case libchess::constants::WHITE_PAWN.val():
+            PawnKing[0 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_PAWN.val():
+            PawnKing[1 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::WHITE_KING.val():
+            PawnKing[2 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_KING.val():
+            PawnKing[3 * 64 + i] = 1.0;
+            break;
+          
+          case libchess::constants::WHITE_QUEEN.val():
+            QueenRook[0 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_QUEEN.val():
+            QueenRook[1 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::WHITE_ROOK.val():
+            QueenRook[2 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_ROOK.val():
+            QueenRook[3 * 64 + i] = 1.0;
+            break;
+          
+          case libchess::constants::WHITE_KNIGHT.val():
+            KnightBishop[0 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_KNIGHT.val():
+            KnightBishop[1 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::WHITE_BISHOP.val():
+            KnightBishop[2 * 64 + i] = 1.0;
+            break;
+          case libchess::constants::BLACK_BISHOP.val():
+            KnightBishop[3 * 64 + i] = 1.0;
+            break;
+
+          default:
+            break;
+        }
+      }
+  }
+  return {true, true, true}; // check hash of pawnsKing, QueenRook, and KnightBishop to the cache hash.
+  }
 };
