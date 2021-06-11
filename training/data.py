@@ -3,6 +3,7 @@ from tqdm import tqdm
 from io import StringIO
 import atexit
 from time import sleep
+import signal
 
 class DataManager:
   def __init__(self) -> None:
@@ -14,8 +15,8 @@ class DataManager:
     self.targets_ = np.append(self.targets_, t)
     
   def write(self):
-    np.save("data{}RANDOM".format(id(self)), self.data_, False)
-    np.save("targets{}RANDOM".format(id(self)), self.targets_, False)
+    np.save("data{}ELITE_LICHESS".format(id(self)), self.data_, False)
+    np.save("targets{}ELITE_LICHESS".format(id(self)), self.targets_, False)
     assert len(self.data_) == len(self.targets_)
     print("wrote {} fens to data{} and {} results to targets{}".format(len(self.data_), id(self), len(self.targets_), id(self)))
   
@@ -30,21 +31,26 @@ datamn = DataManager()
 def from_pgn():
   import chess.pgn
   datapoints = 0
-  pgn = open("data/1.pgn")
+  pgn = open("/home/ghostway/projects/cpp/sunset/training/data/lichess_elite_2021-04.pgn")
   splitted_pgn = pgn.read().split("\n\n")
 
   def at_exit():
     datamn.data_ = np.array(fens)
     datamn.targets_ = np.array(targets)
     datamn.write()
-    print("{} average moves per game".format(datapoints/game))
+    print("{} average moves per game".format(datapoints/games))
   atexit.register(at_exit)
+
+  signal.signal(signal.SIGTERM, at_exit)
+  signal.signal(signal.SIGINT, at_exit)
 
   targets = []
   fens = []
   games = 0
   pbar = tqdm(splitted_pgn, unit="games")
   for g in pbar:
+    if games % 100000 == 999_999:
+      at_exit()
     games += 1
     game = chess.pgn.read_game(StringIO(g))
 
@@ -142,4 +148,4 @@ def from_pgn_engine_eval(threadIdx):
       targets.append(e["score"].white().wdl().expectation())
       board.push(move)
 
-from_random_engine_eval()
+from_pgn()
