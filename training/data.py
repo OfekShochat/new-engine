@@ -1,151 +1,133 @@
+import torch
 import numpy as np
-from tqdm import tqdm
-from io import StringIO
-import atexit
-from time import sleep
-import signal
+from torch.utils.data import IterableDataset
+from os import path
+from glob import glob
 
-class DataManager:
-  def __init__(self) -> None:
+BATCH = 1_000_000
+
+class DataManager(IterableDataset):
+  def __init__(self, data_dir) -> None:
+    self.data_dir = data_dir
+    
     self.data_ = np.array([])
     self.targets_ = np.array([])
+    self.offset = 0
+    self.seen_files = {}
   
-  def add(self, i, t):
-    self.data_ = np.append(self.data_, i)
-    self.targets_ = np.append(self.targets_, t)
-    
-  def write(self):
-    np.save("data{}ELITE_LICHESS".format(id(self)), self.data_, False)
-    np.save("targets{}ELITE_LICHESS".format(id(self)), self.targets_, False)
-    assert len(self.data_) == len(self.targets_)
-    print("wrote {} fens to data{} and {} results to targets{}".format(len(self.data_), id(self), len(self.targets_), id(self)))
   
-  def read(self):
-    self.data_ = np.load("data.npy", "r+", False)
-    self.targets_ = np.load("targets.npy", "r+", False)
-    assert len(self.data_) == len(self.targets_)
+  def read_npy_chunk(self, filename, start_row, num_rows):
+    """
+    gistfile1.py from dwf (https://gist.github.com/dwf/1766222 - https://github.com/dwf)
+    """
+    assert start_row >= 0 and num_rows > 0
+    with open(filename, 'rb') as fhandle:
+      major, minor = np.lib.format.read_magic(fhandle)
+      shape, fortran, dtype = np.lib.format.read_array_header_1_0(fhandle)
+      assert not fortran, "Fortran order arrays not supported"
+      # Make sure the offsets aren't invalid.
+      assert start_row < shape[0], (
+        'start_row is beyond end of file'
+      )
+      assert start_row + num_rows <= shape[0], (
+        'start_row + num_rows > shape[0]'
+      )
+      # Get the number of elements in one 'row' by taking
+      # a product over all other dimensions.
+      row_size = np.prod(shape[1:])
+      start_byte = start_row * row_size * dtype.itemsize
+      fhandle.seek(int(start_byte), 1)
+      n_items = row_size * num_rows
+      flat = np.fromfile(fhandle, count=int(n_items), dtype=dtype)
+      return flat #.reshape((-1,) + shape[1:])
+
+  def readBatch(self):
+    files = glob(path.join(self.data_dir, "*.npy"))
+    for f in files:
+      if 'data' in f.split(path.sep)[-1]:
+        try:
+          self.data_ = self.read_npy_chunk(f, self.getAndIncrememntSeen(f) * BATCH, BATCH)
+          self.targets_ = self.read_npy_chunk(path.join(self.data_dir, self.getTargetsFilename(f)), self.getAndIncrememntSeen(f) * BATCH, BATCH)
+        except AssertionError as e:
+          continue
+        except FileNotFoundError as e:
+          continue
     print("loaded {} fens and {} results".format(len(self.data_), len(self.targets_)))
 
-datamn = DataManager()
+  def getAndIncrememntSeen(self, f):
+    try:
+      self.seen_files[f] += 1
+      return self.seen_files[f] - 1
+    except KeyError:
+      self.seen_files[f] = 1
+      return self.seen_files[f] - 1
 
-def from_pgn():
-  import chess.pgn
-  datapoints = 0
-  pgn = open("/home/ghostway/projects/cpp/sunset/training/data/lichess_elite_2021-04.pgn")
-  splitted_pgn = pgn.read().split("\n\n")
+  def getTargetsFilename(self, f):
+    return f.split(path.sep)[-1].replace("data", "targets")
 
-  def at_exit():
-    datamn.data_ = np.array(fens)
-    datamn.targets_ = np.array(targets)
-    datamn.write()
-    print("{} average moves per game".format(datapoints/games))
-  atexit.register(at_exit)
+  def resetSeenFiles(self):
+    self.seen_files = {}
 
-  signal.signal(signal.SIGTERM, at_exit)
-  signal.signal(signal.SIGINT, at_exit)
+  def toPlanes(self, x):
+    PawnKing = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
+    QueenRook = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
+    KnightBishop = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
 
-  targets = []
-  fens = []
-  games = 0
-  pbar = tqdm(splitted_pgn, unit="games")
-  for g in pbar:
-    if games % 100000 == 999_999:
-      at_exit()
-    games += 1
-    game = chess.pgn.read_game(StringIO(g))
+    i = 0
+    if "w" in x:
+      color = 1
+    else:
+      color = -1
 
-    board = game.board()
-    result = game.headers["Result"]
-    if result == "1-0":
-      r = 1
-    elif result == "0-1":
-      r = 0
-    elif result == "1/2-1/2":
-      r = 0.5
+    for piece in reversed(x[:x.find(" ")]):
+      if piece == "P":
+        PawnKing[0][i] = 1
+      elif piece == "p":
+        PawnKing[1][i] = 1
+      elif piece ==  "K":
+        PawnKing[2][i] = 1
+      elif piece ==  "k":
+        PawnKing[3][i] = 1
+      
+      elif piece ==  "Q":
+        QueenRook[0][i] = 1
+      elif piece ==  "q":
+        QueenRook[1][i] = 1
+      elif piece ==  "R":
+        QueenRook[2][i] = 1
+      elif piece ==  "r":
+        QueenRook[3][i] = 1
 
-    for move in game.mainline_moves():
-      datapoints += 1
-      fens.append(board.fen())
-      targets.append(r)
-      board.push(move)
-
-def from_random_engine_eval():
-  import chess
-  import chess.engine
-
-  stages = [20, 400, 1000, 2000, 5000, 10000, 20000]
-  def random_fen(move_num):
-    b = chess.Board()
-    for _ in range(move_num):
-      b.push(np.random.choice(tuple(b.generate_legal_moves())))
-      if b.is_game_over():
-        b.pop()
+      elif piece ==  "N":
+        KnightBishop[0][i] = 1
+      elif piece ==  "n":
+        KnightBishop[1][i] = 1
+      elif piece ==  "B":
+        KnightBishop[2][i] = 1
+      elif piece ==  "b":
+        KnightBishop[3][i] = 1
+      elif piece == "8":
+        i += 7
+      elif piece == "/":
+        continue
+      elif piece == " ":
         break
-    return b
+      i += 1
+    assert color != 0
+    return (torch.FloatTensor(PawnKing), torch.FloatTensor(QueenRook), torch.FloatTensor(KnightBishop)), color
 
-  engine = chess.engine.SimpleEngine.popen_uci("/home/ghostway/projects/cpp/realStockfish2/src/stockfish")
-  engine.configure({"Threads": 4})
+  def __len__(self):
+    assert len(self.data_) == len(self.targets_)
+    return len(self.targets_)
+  
+  def sample_iter(self):
+    info = torch.utils.data.get_worker_info()
+    worker_id = info.id
+    per_worker = int(len(self)/info.num_workers)
+    for idx in range(worker_id * per_worker, (worker_id + 1) * per_worker):
+      d = self.toPlanes(self.data_[idx])
+      yield d[0], self.targets_[idx] if d[1] == 1 else 1 - self.targets_[idx]
 
-  targets = []
-  fens = []
-
-  def at_exit():
-    datamn.data_ = np.array(fens)
-    datamn.targets_ = np.array(targets, dtype=np.float16)
-    datamn.write()
-    engine.close()
-  atexit.register(at_exit)
-
-  m_n = 1
-  samples_per_moveStage = 20
-  pbar = tqdm(range(100_000_000), unit="pos")
-  for i in pbar:
-    #if i % samples_per_moveStage == 0:
-    #  m_n += 1
-    #  samples_per_moveStage = stages[m_n - 1] if m_n-1 < len(stages) else stages[-1] * m_n//2
-    
-    b = random_fen(np.random.randint(1, 40))
-    e = engine.analyse(b, chess.engine.Limit(depth=1))
-
-    fens.append(b.fen())
-    targets.append(e["score"].white().wdl().expectation())
-
-def from_pgn_engine_eval(threadIdx):
-  import chess
-  import chess.engine
-  import chess.pgn
-  datapoints = 0
-  pgn = open("data/1.pgn")
-  splitted_pgn = pgn.read().split("\n\n")[threadIdx * 100_000: (threadIdx+1) * 100_000]
-
-  engine = chess.engine.SimpleEngine.popen_uci("/home/ghostway/projects/cpp/realStockfish2/src/stockfish")
-
-  targets = []
-  fens = []
-  games = 0
-
-  def at_exit():
-    datamn.data_ = np.array(fens)
-    datamn.targets_ = np.array(targets, dtype=np.float16)
-    datamn.write()
-    engine.close()
-  atexit.register(at_exit)
-
-  pbar = tqdm(splitted_pgn, unit="games")
-  for g in pbar:
-    if games % 15_000 == 15_000-1:
-      pbar.set_description("sleeping")
-      sleep(2)
-    games += 1
-    game = chess.pgn.read_game(StringIO(g))
-
-    board = game.board()
-
-    for move in game.mainline_moves():
-      datapoints += 1
-      fens.append(board.fen())
-      e = engine.analyse(board, chess.engine.Limit(depth=1))
-      targets.append(e["score"].white().wdl().expectation())
-      board.push(move)
-
-from_pgn()
+  def __iter__(self):
+    for sample in self.sample_iter():
+      yield sample[0], sample[1]
