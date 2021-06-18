@@ -1,6 +1,8 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import protopy.SAC1_pb2 as pbsunset
+from numpy import array, float32
 
 def entropy(loss, p):
   return loss + (p * (p + 1e-12).log() + (1.0 - p) * (1.0 - p + 1e-12).log())
@@ -29,6 +31,8 @@ class SAC1(nn.Module):
 
     self.loss = loss
     self.optimizer = optimizer(self.parameters(), lr=0.0015)
+
+    self.pb = pbsunset.Net()
 
   def forward(self, PawnKing, QueenRook, KnightBishop): #d
     PawnKing     = F.relu(self.SubPawnKing_dense(PawnKing))
@@ -126,6 +130,7 @@ class SAC1(nn.Module):
     return (torch.FloatTensor(PawnKing) , torch.FloatTensor(QueenRook), torch.FloatTensor(KnightBishop)), color
 
   def test(self):
+    self.eval()
     while True:
       i = input()
       data = self.toPlanes(i)[0]
@@ -139,3 +144,25 @@ class SAC1(nn.Module):
       KnightBishop = KnightBishop.cuda()
       out = torch.sigmoid(self(PawnKing.float(), QueenRook.float(), KnightBishop.float()))
       print(out)
+
+  def load_checkpoint(self, f):
+    checkpoint = torch.load(f)
+    self.load_state_dict(checkpoint['model_state_dict'])
+    self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+    self.train()
+    return checkpoint['epoch']
+
+  def save_checkpoint(self, f, loss, epoch):
+    from torch import save
+    save({
+      'epoch': epoch,
+      'model_state_dict': self.state_dict(),
+      'optimizer_state_dict': self.optimizer.state_dict(),
+      'loss': loss,
+    }, f)
+
+  def save_proto(self, f):
+    for name, content in self.network.named_parameters():
+      exec("self.pb.params.{} = {}".format(name, bytes(content.detach().numpy())))
+    data = self.pb.SerializeToString()
+    open(f, 'wb+').write(data)

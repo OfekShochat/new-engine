@@ -23,6 +23,11 @@ def main():
   network = model.SAC1(crossEntropy_loss, optim.Adam).cuda()
   dataset = data.DataManager(cfg.data_dir)
 
+  import atexit
+  def at_exit():
+    network.save_checkpoint("SAC{}.cpkt".format(e), losses/i, e)
+  atexit.register(at_exit)
+
   for e in range(cfg.epochs):
     dataset.readBatch()
     pbar = tqdm(total=len(dataset)//cfg.batch_size)
