@@ -1,7 +1,9 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from tqdm import tqdm
+
+def entropy(loss, p):
+  return loss + (p * (p + 1e-12).log() + (1.0 - p) * (1.0 - p + 1e-12).log())
 
 class SAC1(nn.Module):
   def __init__(self, loss, optimizer):
@@ -26,20 +28,18 @@ class SAC1(nn.Module):
     self.dropout2 = nn.Dropout(p = 0.8)
 
     self.loss = loss
-    self.optimizer = optimizer(self.parameters())
+    self.optimizer = optimizer(self.parameters(), lr=0.0015)
 
-    self.pbar = tqdm(total=10000)
-
-  def forward(self, PawnKing, QueenRook, KnightBishop):
-    PawnKing     = self.SubPawnKing_dense(PawnKing)
-    QueenRook    = self.SubQueenRook_dense(QueenRook)
-    KnightBishop = self.SubKnightBishop_dense(KnightBishop)
+  def forward(self, PawnKing, QueenRook, KnightBishop): #d
+    PawnKing     = F.relu(self.SubPawnKing_dense(PawnKing))
+    QueenRook    = F.relu(self.SubQueenRook_dense(QueenRook))
+    KnightBishop = F.relu(self.SubKnightBishop_dense(KnightBishop))
     added = torch.add(PawnKing, QueenRook)
     added = torch.add(added, KnightBishop)
 
-    x = self.dropout1(added)
-    x  = self.MainInput_dense(added)
-    x = self.dropout2(x)
+    #x = self.dropout1(added)
+    x  = F.relu(self.MainInput_dense(added)) #KnightBishop
+    #x = self.dropout2(x)
     x  = self.MainOut_dense(x)
     return x
   
@@ -52,14 +52,13 @@ class SAC1(nn.Module):
 
     KnightBishop = data[2].view(-1, 4 * 64)
     KnightBishop = KnightBishop.cuda()
-    out = self(PawnKing.float(), QueenRook.float(), KnightBishop.float())
-    
+    out = self(PawnKing.float(), QueenRook.float(), KnightBishop.float()) #
     loss = self.loss(out, target.float().view(-1, 1).cuda())
     loss.backward()
     self.optimizer.step()
     self.optimizer.zero_grad()
 
-    self.log(loss.item())
+    return float(entropy(loss.item(), target.float().view(-1, 1)[0]))
 
   def test_step(self, data: tuple, target: float) -> None:
     with torch.no_grad():
@@ -76,6 +75,67 @@ class SAC1(nn.Module):
       loss = self.loss(out, target.float().view(-1, 1).cuda())
       self.log(loss.item())
 
-  def log(self, loss):
-    self.pbar.update()
-    self.pbar.set_description("loss: {}".format(loss), refresh=False)
+  def toPlanes(self, x):
+    PawnKing     = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
+    QueenRook    = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
+    KnightBishop = [[0] * 64, [0] * 64, [0] * 64, [0] * 64]
+
+    i = 0
+    if "w" in x:
+      color = 1
+      #iterable = reversed(x[:x.find(" ")])
+    else:
+      #iterable = x[:x.find(" ")]
+      color = -1
+
+    for piece in reversed(x[:x.find(" ")]):
+      if piece == "P":
+        PawnKing[0][i] = 1
+      elif piece == "p":
+        PawnKing[1][i] = 1
+      elif piece ==  "K":
+        PawnKing[2][i] = 1
+      elif piece ==  "k":
+        PawnKing[3][i] = 1
+      
+      elif piece ==  "Q":
+        QueenRook[0][i] = 1
+      elif piece ==  "q":
+        QueenRook[1][i] = 1
+      elif piece ==  "R":
+        QueenRook[2][i] = 1
+      elif piece ==  "r":
+        QueenRook[3][i] = 1
+
+      elif piece ==  "N":
+        KnightBishop[0][i] = 1
+      elif piece ==  "n":
+        KnightBishop[1][i] = 1
+      elif piece ==  "B":
+        KnightBishop[2][i] = 1
+      elif piece ==  "b":
+        KnightBishop[3][i] = 1
+      elif piece == "8":
+        i += 7
+      elif piece == "/":
+        continue
+      elif piece == " ":
+        break
+      i += 1
+    #assert color != 0
+    return (torch.FloatTensor(PawnKing) , torch.FloatTensor(QueenRook), torch.FloatTensor(KnightBishop)), color
+
+  def test(self):
+    while True:
+      i = input()
+      data = self.toPlanes(i)[0]
+      PawnKing = data[0].view(-1, 4 * 64)
+      PawnKing = PawnKing.cuda()
+      
+      QueenRook = data[1].view(-1, 4 * 64)
+      QueenRook = QueenRook.cuda()
+
+      KnightBishop = data[2].view(-1, 4 * 64)
+      KnightBishop = KnightBishop.cuda()
+      out = torch.sigmoid(self(PawnKing.float(), QueenRook.float(), KnightBishop.float()))
+      print(out)
