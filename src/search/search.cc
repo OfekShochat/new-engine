@@ -11,12 +11,12 @@
 #define MATE 10000
 #define MAX_QUIESCENCE_PLY 10
 
-void Stack::addToTT(int key, TTEntry entry) {
+void Stack::AddToTT(int key, TTEntry entry) {
   std::lock_guard<std::mutex> lock(TTMutex);
   TT[key] = entry;
 }
 
-TTEntry Stack::fromTT(int key) {
+TTEntry Stack::FromTT(int key) {
   std::lock_guard<std::mutex> lock(TTMutex);
   return TT[key];
 }
@@ -34,22 +34,22 @@ void Stack::UpdateKillers(int depth, libchess::Move m) {
   }
 }
 
-int Stack::elapsedTime() {
+int Stack::ElapsedTime() {
   std::chrono::high_resolution_clock::time_point now = std::chrono::high_resolution_clock::now();
   return std::chrono::duration_cast<std::chrono::milliseconds>(now - start_time).count();
 }
 
-void Stack::resetTimer() {
+void Stack::ResetTimer() {
   start_time = std::chrono::high_resolution_clock::now();
 }
 
-void Stack::incrementNodes() {
+void Stack::IncrementNodes() {
   std::lock_guard<std::mutex> lock(NodesMutex);
   nodes++;
 }
 
-void Searcher::printThink(std::shared_ptr<Stack> shared, int eval, int depth) {
-  int elapsed = shared->elapsedTime();
+void Searcher::PrintThink(std::shared_ptr<Stack> shared, int eval, int depth) {
+  int elapsed = shared->ElapsedTime();
   std::cout << "info depth " << depth << " score cp " << eval << " nodes " << shared->nodes << " nps " << shared->nodes/elapsed*1000 << " time " << elapsed << std::endl;
 }
 
@@ -98,7 +98,7 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
 
   if (shared->nodes % 2048 == 0
       && (shared->nodes > limits.nodes
-      ||  shared->elapsedTime() > limits.time))
+      ||  shared->ElapsedTime() > limits.time))
     return static_cast<int>(util::FastLog(0.5/(1-0.5))); // TODO(ghostway): make it actually evaluate
 
   // Max depth reached
@@ -121,9 +121,9 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
   bool TTHit = false;
   TTEntry TTE;
   if (shared->TTContains(pos.hash())) {
-    shared->incrementNodes();
+    shared->IncrementNodes();
     TTHit = true;
-    TTE = shared->fromTT(pos.hash());
+    TTE = shared->FromTT(pos.hash());
   }
 
   if (   TTHit
@@ -135,7 +135,7 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
   int moveIdx = 0;
   for (const libchess::Move& m : moves) {
     moveIdx++;
-    shared->incrementNodes();
+    shared->IncrementNodes();
     pos.make_move(m);
     const int score = -AlphaBeta(shared, pos, -beta, -alpha, curr_depth + 1, max_depth, limits);
     pos.unmake_move();
@@ -156,14 +156,14 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
       TTEntry req;
       req.eval = bestScore;
       req.depth = max_depth;
-      shared->addToTT(pos.hash(), req);
+      shared->AddToTT(pos.hash(), req);
     }
   }
   return bestScore;
 }
 
 std::tuple<libchess::Move, int> Searcher::SearchPos(std::shared_ptr<Stack> shared, libchess::Position pos, int depth, Limiter limits) {
-  shared->resetTimer();
+  shared->ResetTimer();
   libchess::Move bestMove;
   int alpha = -MATE;
   int beta = MATE;
@@ -186,6 +186,6 @@ std::tuple<libchess::Move, int> Searcher::SearchPos(std::shared_ptr<Stack> share
       }
     }
   }
-  printThink(shared, bestScore, depth);
+  PrintThink(shared, bestScore, depth);
   return { bestMove, bestScore };
 }

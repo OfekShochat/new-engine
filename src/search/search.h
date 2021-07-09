@@ -23,13 +23,13 @@ class Stack {
   std::chrono::high_resolution_clock::time_point start_time = std::chrono::high_resolution_clock::now();
  public:
   //Stack();
-  void addToTT(int key, TTEntry entry);
-  TTEntry fromTT(int key);
+  void AddToTT(int key, TTEntry entry);
+  TTEntry FromTT(int key);
   bool TTContains(int key);
   void UpdateKillers(int depth, libchess::Move m);
-  void incrementNodes();
-  void resetTimer();
-  int elapsedTime();
+  void IncrementNodes();
+  void ResetTimer();
+  int ElapsedTime();
 
   int nodes = 0;
 };
@@ -41,7 +41,7 @@ struct Limiter {
 
 class Searcher {
  private:
-  void printThink(std::shared_ptr<Stack> shared, int eval, int depth);
+  void PrintThink(std::shared_ptr<Stack> shared, int eval, int depth);
   int Quiescence(std::shared_ptr<Stack> shared, libchess::Position pos, int alpha, int beta, int curr_depth);
   int AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, int alpha, int beta, int curr_depth, int max_depth, Limiter limits, bool PVNode = false);
  public:
