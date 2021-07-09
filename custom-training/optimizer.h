@@ -40,7 +40,6 @@ float BinaryCrossEntropyLoss(float y_true, float y_pred) {
 float BinaryCrossEntropyLossDerivative(float y_true, float y_pred /*= yhat */) {
   const float y_true_sigmoid = Sigmoid(y_true, 400);
   const float y_pred_sigmoid = Sigmoid(y_pred, 400);
-  std::cout << y_true_sigmoid << " " << y_pred_sigmoid << std::endl;
   return -(y_true_sigmoid / y_pred_sigmoid - (1 - y_true_sigmoid) / (1 - y_pred_sigmoid));
 }
 } // namespace training
