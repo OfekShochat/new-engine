@@ -6,9 +6,9 @@ int main() {
   Stack d;
   TTEntry e{};
   e.eval = 3;
-  d.addToTT(432, e);
+  d.AddToTT(432, e);
 
-  return EXPECT<bool>((d.fromTT(432).eval == 3
+  return EXPECT<bool>((d.FromTT(432).eval == 3
                       && d.TTContains(432)
                       && !d.TTContains(42)),
                       true);

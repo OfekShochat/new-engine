@@ -3,7 +3,7 @@
 #include <cstdlib>
 #include <ctime>
 
-#define EPSILON 0.0001
+constexpr float EPSILON = 0.0001;
 
 bool compare_floats_(float a, float b) {
   float diff = a - b;
