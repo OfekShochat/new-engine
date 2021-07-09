@@ -11,4 +11,5 @@ normalCompile = ['-std=c++17', '-fopenmp']
 
 executable('train', 'main.cc', files,
            include_directories : incdir,
-           cpp_args : normalCompile)
+           cpp_args : normalCompile,
+           link_args : '-fopenmp')

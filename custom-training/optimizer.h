@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cmath>
-#include <iostream>
 
 namespace sunset::training {
 class AdagradOptimizer {
@@ -17,7 +16,7 @@ class AdagradOptimizer {
   void step(float* params, float loss_derivative) {
     diagGt += loss_derivative * loss_derivative;
 
-    //#pragma omp parallel for
+    #pragma omp parallel for
     for (int i = 0; i < LENGTH; i++) {
       params[i] = params[i] - lr_ * loss_derivative / std::sqrt(diagGt + epsilon_);
     }
