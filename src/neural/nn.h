@@ -27,83 +27,67 @@ class Layer {
   }
 };
 
-class SAC1 {
+class InferenceNet1 {
  private:
-  static Layer<4 * 64, 64> SubPawnKing;
-  static Layer<4 * 64, 64> SubQueenRook;
-  static Layer<4 * 64, 64> SubKnightBishop;
+  static Layer<768, 512> l1;
+  static Layer<512, 1> l2;
 
-  static Layer<64, 32> MainInput;
-  static Layer<32, 1> MainOut;
  public:
   void load(float* weights1, float* biases1,
-            float* weights2, float* biases2,
-            float* weights3, float* biases3,
-            float* weights4, float* biases4,
-            float* weights5, float* biases5) {
-    SubPawnKing.load(weights1, biases1);
-    SubQueenRook.load(weights2, biases2);
-    SubKnightBishop.load(weights3, biases3);
-    
-    MainInput.load(weights4, biases4);
-    MainOut.load(weights5, biases5);
+            float* weights2, float* biases2) {
+    l1.load(weights1, biases1);
+    l2.load(weights2, biases2);
   }
-  void eval(float* PawnKing, bool skipPawnKing,
-            float* KnightBishop, bool skipKnightBishop,
-            float* QueenRook, bool skipQueenRook,
+  void eval(float* input,
             float out[1]);
-  std::tuple<bool, bool, bool> make(libchess::Position pos,
-                                    float* PawnKing,
-                                    float* KnightBishop,
-                                    float* QueenRook) {
+
+  void make(libchess::Position pos,
+            float* out) {
     for (int i = 0; i < 64; i++) {
       auto p = pos.piece_on(libchess::Square(i));
       if (p.has_value()) {
         switch (p.value().val()) {
           case libchess::constants::WHITE_PAWN.val():
-            PawnKing[0 * 64 + i] = 1.0;
+            out[0 * 64 + i] = 1;
             break;
-          case libchess::constants::BLACK_PAWN.val():
-            PawnKing[1 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::WHITE_KING.val():
-            PawnKing[2 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::BLACK_KING.val():
-            PawnKing[3 * 64 + i] = 1.0;
-            break;
-          
-          case libchess::constants::WHITE_QUEEN.val():
-            QueenRook[0 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::BLACK_QUEEN.val():
-            QueenRook[1 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::WHITE_ROOK.val():
-            QueenRook[2 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::BLACK_ROOK.val():
-            QueenRook[3 * 64 + i] = 1.0;
-            break;
-          
           case libchess::constants::WHITE_KNIGHT.val():
-            KnightBishop[0 * 64 + i] = 1.0;
-            break;
-          case libchess::constants::BLACK_KNIGHT.val():
-            KnightBishop[1 * 64 + i] = 1.0;
+            out[1 * 64 + i] = 1;
             break;
           case libchess::constants::WHITE_BISHOP.val():
-            KnightBishop[2 * 64 + i] = 1.0;
+            out[2 * 64 + i] = 1;
+            break;
+          case libchess::constants::WHITE_ROOK.val():
+            out[3 * 64 + i] = 1;
+            break;
+          case libchess::constants::WHITE_QUEEN.val():
+            out[4 * 64 + i] = 1;
+            break;
+          case libchess::constants::WHITE_KING.val():
+            out[5 * 64 + i] = 1;
+            break;
+          case libchess::constants::BLACK_PAWN.val():
+            out[6 * 64 + i] = 1;
+            break;
+          case libchess::constants::BLACK_KNIGHT.val():
+            out[7 * 64 + i] = 1;
             break;
           case libchess::constants::BLACK_BISHOP.val():
-            KnightBishop[3 * 64 + i] = 1.0;
+            out[8 * 64 + i] = 1;
+            break;
+          case libchess::constants::BLACK_ROOK.val():
+            out[9 * 64 + i] = 1;
+            break;
+          case libchess::constants::BLACK_QUEEN.val():
+            out[10 * 64 + i] = 1;
+            break;
+          case libchess::constants::BLACK_KING.val():
+            out[11 * 64 + i] = 1;
             break;
 
           default:
             break;
         }
       }
-  }
-  return {true, true, true}; // check hash of pawnsKing, QueenRook, and KnightBishop to the cache hash.
+    }
   }
 };

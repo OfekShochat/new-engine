@@ -66,7 +66,7 @@ inline float dot_product(const float* a, const float* b) {
     const float sum = _mm_cvtss_f32(reduced_1);
     return sum;
 #elif __SSE__
-    static_assert(alignment % sizeof(float)) == 0, "alignment must be divisible by sizeof(T)");
+    static_assert(alignment % sizeof(float) == 0, "alignment must be divisible by sizeof(T)");
     constexpr size_t num_units = 4;
     constexpr size_t per_unit = alignment / sizeof(float);
     constexpr size_t per_iteration = per_unit * num_units;
@@ -107,7 +107,7 @@ inline float dot_product(const float* a, const float* b) {
     const __m128 reduced_2 = _mm_add_ps(reduced_4, _mm_movehl_ps(reduced_4, reduced_4));
     // adds 0th float element to 1st float element
     const __m128 reduced_1 = _mm_add_ss(reduced_2, _mm_shuffle_ps(reduced_2, reduced_2, 0x1));
-    const T sum = _mm_cvtss_f32(reduced_1);
+    const float sum = _mm_cvtss_f32(reduced_1);
     return sum;
 #else
   return dot_product_<N>(a, b);
