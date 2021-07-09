@@ -1,0 +1,14 @@
+[
+  {
+    "directory": "/home/ghostway/projects/cpp/sunset/custom-training/build",
+    "command": "c++ -Itrain.p -I. -I.. -I../.. -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -std=c++17 -fopenmp -MD -MQ train.p/main.cc.o -MF train.p/main.cc.o.d -o train.p/main.cc.o -c ../main.cc",
+    "file": "../main.cc",
+    "output": "train.p/main.cc.o"
+  },
+  {
+    "directory": "/home/ghostway/projects/cpp/sunset/custom-training/build",
+    "command": "c++ -Itrain.p -I. -I.. -I../.. -fdiagnostics-color=always -pipe -D_FILE_OFFSET_BITS=64 -Wall -Winvalid-pch -Wnon-virtual-dtor -std=c++17 -g -std=c++17 -fopenmp -MD -MQ train.p/nn.cc.o -MF train.p/nn.cc.o.d -o train.p/nn.cc.o -c ../nn.cc",
+    "file": "../nn.cc",
+    "output": "train.p/nn.cc.o"
+  }
+]
