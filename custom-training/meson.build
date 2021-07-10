@@ -5,6 +5,8 @@ cc = meson.get_compiler('cpp')
 incdir = include_directories('..')
 files = [
   'nn.cc',
+  'trainer.cc',
+  'optimizer.cc'
 ]
 
 normalCompile = ['-std=c++17', '-fopenmp']
