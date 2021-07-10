@@ -1,6 +1,7 @@
 #pragma once
 
 #include "chess/Position.h"
+#include "neural/nn.h"
 #include <map> // TODO(ghostway): try this with unordered_map, see if its faster
 #include <mutex>
 #include <tuple>
@@ -41,9 +42,11 @@ struct Limiter {
 
 class Searcher {
  private:
+  InferenceNet1 net;
   void PrintThink(std::shared_ptr<Stack> shared, int eval, int depth);
   int Quiescence(std::shared_ptr<Stack> shared, libchess::Position pos, int alpha, int beta, int curr_depth);
   int AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, int alpha, int beta, int curr_depth, int max_depth, Limiter limits, bool PVNode = false);
  public:
+  Searcher();
   std::tuple<libchess::Move, int> SearchPos(std::shared_ptr<Stack> shared, libchess::Position pos, int depth, Limiter limits);
 };

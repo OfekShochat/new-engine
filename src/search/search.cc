@@ -1,6 +1,7 @@
 #include "search/search.h"
 #include "chess/Position.h"
 #include "util/fastmath.h"
+#include "neural/nn.h"
 #include <mutex>
 #include <algorithm>
 #include <tuple>
@@ -46,6 +47,33 @@ void Stack::ResetTimer() {
 void Stack::IncrementNodes() {
   std::lock_guard<std::mutex> lock(NodesMutex);
   nodes++;
+}
+
+template <int LENGTH>
+void ScaleWeights(float weight[LENGTH]) {
+  for (int i = 0; i < LENGTH; i++) {
+    weight[i] = weight[i] / 40;
+  }
+}
+
+Searcher::Searcher() {
+  #include "net.h"
+  float dense1_w[512 * 768];
+  float dense1_b[512];
+  float out_w[512];
+  float out_b[1];
+  std::copy(dense1_weights, dense1_weights + 768 * 512, dense1_w);
+  std::copy(dense1_bias, dense1_bias + 512, dense1_b);
+  std::copy(out_weights, out_weights + 512, out_w);
+  std::copy(out_bias, out_bias + 1, out_b);
+
+  /*ScaleWeights<512 * 768>(dense1_w);
+  ScaleWeights<512>(dense1_b);
+  ScaleWeights<512>(out_w);
+  ScaleWeights<1>(out_b);*/
+
+  net.load(dense1_w, dense1_b,
+           out_w, out_b);
 }
 
 void Searcher::PrintThink(std::shared_ptr<Stack> shared, int eval, int depth) {
@@ -98,12 +126,22 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
 
   if (shared->nodes % 2048 == 0
       && (shared->nodes > limits.nodes
-      ||  shared->ElapsedTime() > limits.time))
-    return static_cast<int>(util::FastLog(0.5/(1-0.5))); // TODO(ghostway): make it actually evaluate
+      ||  shared->ElapsedTime() > limits.time)) {
+    float out[1];
+    float input_position[768];
+    net.make(pos, input_position);
+    net.eval(input_position, out);
+    return static_cast<int>(out[0]);
+  }
 
   // Max depth reached
-  if (curr_depth >= MAX_PLY)
-    return static_cast<int>(util::FastLog(0.5/(1-0.5))); // TODO(ghostway): make it actually evaluate
+  if (curr_depth >= MAX_PLY) {
+    float out[1];
+    float input_position[768];
+    net.make(pos, input_position);
+    net.eval(input_position, out);
+    return static_cast<int>(out[0]);
+  }
 
   // Mate distance pruning
   alpha = std::max(alpha, -MATE + curr_depth);
@@ -112,11 +150,17 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
   if (alpha >= beta)
     return alpha;
 
-  //if (pos.in_check())
-  //  max_depth++;
+  if (pos.in_check()) {
+    max_depth++;
+  }
   
-  if (curr_depth >= max_depth)
-    return 0; //Quiescence(shared, pos, alpha, beta, 0); // TODO(ghostway): make it actually evaluate or Quiescence search
+  if (curr_depth >= max_depth) {
+    float out[1];
+    float input_position[768];
+    net.make(pos, input_position);
+    net.eval(input_position, out);
+    return static_cast<int>(out[0]);
+  }
 
   bool TTHit = false;
   TTEntry TTE;
@@ -140,7 +184,7 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
     const int score = -AlphaBeta(shared, pos, -beta, -alpha, curr_depth + 1, max_depth, limits);
     pos.unmake_move();
     
-    //  if (curr_depth == 0) std::cout << m << " " << score << " " << curr_depth << " " << i << std::endl;
+    //std::cout << m << " " << score << " " << curr_depth << std::endl;
 
     if (score > bestScore) {
       bestScore = score;
@@ -151,12 +195,6 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
           return score;
         }
       }
-    }
-    if (moveIdx > 10) {
-      TTEntry req;
-      req.eval = bestScore;
-      req.depth = max_depth;
-      shared->AddToTT(pos.hash(), req);
     }
   }
   return bestScore;

@@ -7,9 +7,9 @@ incdir = include_directories('../src')
 files = []
 
 files += [
-    'src/search/search.cc',
-    'src/neural/nn.cc',
-    'src/uci.cc'
+  'src/search/search.cc',
+  'src/neural/nn.cc',
+  'src/uci.cc',
 ]
 
 gdbCompile = ['-std=c++17', '-g']
@@ -20,10 +20,10 @@ add_project_arguments(cc.get_supported_arguments(['-march=native']), language : 
 TTTest = executable('transpositionTest', 'src/tests/TTTest.cc', files,
                     include_directories : incdir, cpp_args : gdbCompile)
 test('TT', TTTest)
-NNTest = executable('neuralNetworkTest', 'src/tests/NNTest.cc', files,
+NNTest = executable('neuralNetworkTest', 'src/tests/NNTest.cc', 'src/neural/nn.cc',
                     include_directories : incdir, cpp_args : gdbCompile)
 test('NN', NNTest)
-NNTest = executable('LayerTest', 'src/tests/LayerTest.cc', files,
+NNTest = executable('LayerTest', 'src/tests/LayerTest.cc', 'src/neural/nn.cc',
                     include_directories : incdir, cpp_args : gdbCompile)
 test('Layer', NNTest)
 

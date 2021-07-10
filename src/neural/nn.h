@@ -5,7 +5,6 @@
 
 #include <cstdint>
 #include <cstring>
-#include <iostream>
 
 template <int INPUTS, int NEURONS>
 class Layer {
@@ -48,40 +47,40 @@ class InferenceNet1 {
       if (p.has_value()) {
         switch (p.value().val()) {
           case libchess::constants::WHITE_PAWN.val():
-            out[0 * 64 + i] = 1;
+            out[0 * 64 + i] = 1.0f;
             break;
           case libchess::constants::WHITE_KNIGHT.val():
-            out[1 * 64 + i] = 1;
+            out[1 * 64 + i] = 1.0f;
             break;
           case libchess::constants::WHITE_BISHOP.val():
-            out[2 * 64 + i] = 1;
+            out[2 * 64 + i] = 1.0f;
             break;
           case libchess::constants::WHITE_ROOK.val():
-            out[3 * 64 + i] = 1;
+            out[3 * 64 + i] = 1.0f;
             break;
           case libchess::constants::WHITE_QUEEN.val():
-            out[4 * 64 + i] = 1;
+            out[4 * 64 + i] = 1.0f;
             break;
           case libchess::constants::WHITE_KING.val():
-            out[5 * 64 + i] = 1;
+            out[5 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_PAWN.val():
-            out[6 * 64 + i] = 1;
+            out[6 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_KNIGHT.val():
-            out[7 * 64 + i] = 1;
+            out[7 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_BISHOP.val():
-            out[8 * 64 + i] = 1;
+            out[8 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_ROOK.val():
-            out[9 * 64 + i] = 1;
+            out[9 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_QUEEN.val():
-            out[10 * 64 + i] = 1;
+            out[10 * 64 + i] = 1.0f;
             break;
           case libchess::constants::BLACK_KING.val():
-            out[11 * 64 + i] = 1;
+            out[11 * 64 + i] = 1.0f;
             break;
 
           default:
