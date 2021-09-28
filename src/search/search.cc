@@ -127,17 +127,13 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
   if (shared->nodes % 2048 == 0
       && (shared->nodes > limits.nodes
       ||  shared->ElapsedTime() > limits.time)) {
-    float out[1];
-    float input_position[768];
-    net.make(pos, input_position);
-    net.eval(input_position, out);
-    return static_cast<int>(out[0]);
+    
   }
 
   // Max depth reached
   if (curr_depth >= MAX_PLY) {
-    float out[1];
-    float input_position[768];
+    float out[1] = {};
+    float input_position[768] = {};
     net.make(pos, input_position);
     net.eval(input_position, out);
     return static_cast<int>(out[0]);
@@ -155,8 +151,8 @@ int Searcher::AlphaBeta(std::shared_ptr<Stack> shared, libchess::Position pos, i
   }
   
   if (curr_depth >= max_depth) {
-    float out[1];
-    float input_position[768];
+    float out[1] = {};
+    float input_position[768] = {};
     net.make(pos, input_position);
     net.eval(input_position, out);
     return static_cast<int>(out[0]);
